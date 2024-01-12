@@ -5,6 +5,7 @@ import AddDevices from "../screens/addDevices";
 import Dashboard from "../screens/dashboard";
 import Login from "../screens/login";
 import Register from "../screens/register";
+import EditWifiSSid from "../screens/editWifiSSid";
 
 const Stack = createNativeStackNavigator();
 
@@ -19,6 +20,7 @@ function MainStack() {
             <Stack.Screen options={{headerLeft: () => <></>, headerTitle: "About app"}} name="About" component={About} />
             <Stack.Screen options={{headerLeft: () => <></>, headerTitle: "My devices"}} name="MyDevices" component={MyDevices} />
             <Stack.Screen options={{headerLeft: () => <></>, headerTitle: "Add device"}} name="AddDevices" component={AddDevices} />
+            <Stack.Screen options={{headerLeft: () => <></>, headerTitle: "Edit device WifiSSID"}} name="EditWifiSSid" component={EditWifiSSid} />
         </Stack.Navigator>
     );
 }

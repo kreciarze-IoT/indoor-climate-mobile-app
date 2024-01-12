@@ -1,10 +1,17 @@
 import {Device} from "react-native-ble-plx";
 
+export const aes_iv = "41d2067961d7438aab6f2ac736b2d136";
+export const aes_key = "306f56538ca5ecbc416a58480102f5f0735bf4fe29d409b81a18f621756e126c";
+export const ble_service = "00000001-710e-4a5b-8d75-3e5b444bc3cf";
+export const ble_write_characteristic = "00000004-710e-4a5b-8d75-3e5b444bc3cf";
+export const ble_read_characteristic = "00000004-710e-4a5b-8d75-3e5b444bc3cf";
+
 export type BluetoothLowEnergyApi = {
     requestPermissions(): Promise<boolean>;
     scanForPeripherals(): void;
     bleDevicesList: Device[];
     connectToDevice(bearer_token: string, deviceId: string, wifiPass: string): void;
+    changeDeviceWifiCredentials(bearer_token: string, deviceId: string, wifiPass: string, wifiName: string): void;
 }
 
 export type decryptedData = {

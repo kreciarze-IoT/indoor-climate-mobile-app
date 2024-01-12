@@ -10,7 +10,7 @@ const UserCredentialsContext = createContext({
     token: '',
     setToken: (token: string) => {},
     devices: [] as DeviceProperties[],
-    setAddDeviceSignal: (state: (prev) => boolean) => {},
+    setAddDeviceSignal: (state: (prev: any) => boolean) => {},
 });
 
 export function useUserCredentials () {

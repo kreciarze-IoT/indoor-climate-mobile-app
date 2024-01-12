@@ -234,6 +234,23 @@ export async function getRecords(
         });
 }
 
-function shiftDateByHours(date: Date, hours: number){
-    return new Date(date.setHours(date.getHours() + hours));
+export async function getDeviceToken(
+    deviceId: string,
+    token: string
+){
+    return fetch(endpoints.devices + "/" + deviceId + "/token", {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    })
+        .then(response => response.json())
+        .then(data => {
+            return data.device_bearer_token;
+        })
+        .catch((error) => {
+            Alert.alert("Błąd serwera! Spróbuj ponownie później.");
+        });
 }

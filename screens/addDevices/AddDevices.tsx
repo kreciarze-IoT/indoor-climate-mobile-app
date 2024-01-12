@@ -1,7 +1,7 @@
 import {View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, TextInput} from "react-native";
 import {colors} from "../../styles/global";
 import {useEffect, useRef, useState} from "react";
-import useBLE from "../../hooks/useBLE";
+import useBLE from "../../hooks/useBle/useBLE";
 import Modal from "../../components/modal";
 import {useUserCredentials} from "../../hooks/useUserCredentials/useUserCredentials";
 
