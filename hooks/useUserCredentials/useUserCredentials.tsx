@@ -10,6 +10,7 @@ const UserCredentialsContext = createContext({
     token: '',
     setToken: (token: string) => {},
     devices: [] as DeviceProperties[],
+    setDevices: (devices: (prev) => any) => {},
     setAddDeviceSignal: (state: (prev: any) => boolean) => {},
 });
 
@@ -43,6 +44,7 @@ export default function UserCredentialsProvider({children}: any) {
             token: token,
             setToken: setToken,
             devices: devicesArray,
+            setDevices: setDevicesArray,
             setAddDeviceSignal: setAddDeviceSignal,
         }}>
             {children}

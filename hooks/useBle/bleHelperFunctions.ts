@@ -61,13 +61,17 @@ export async function sendWiFiCredentials(device: Device, rpiToken: string, wifi
 export function waitForResponse(device: Device, bearerToken:string ): Promise<void>{
     return new Promise((resolve, reject) => {
         const interval = setInterval(() => {
+            console.log("Interval called")
             device.readCharacteristicForService(ble_service, ble_read_characteristic)
                 .then((characteristic) => {
+                    console.log("Data read from characteristic", JSON.stringify(characteristic, null, 2))
                     if (characteristic.value) {
+                        console.log("Characteristic Value: ", characteristic.value)
                         const utfMessage = Buffer.from(characteristic.value, "base64").toString("utf8");
                         const decryptedMessage = decryptData(utfMessage);
                         decryptedMessage.then((value) => {
                             const message = JSON.parse(value);
+                            console.log("Message: ", message)
                             if (message === "s" || message === "f") {
                                 clearInterval(interval);
                                 notifyAboutConnecitonResult(message === "s")

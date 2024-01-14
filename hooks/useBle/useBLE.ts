@@ -75,6 +75,12 @@ export default function useBLE(): BluetoothLowEnergyApi {
             .then(async (device) => {
                 createDevice(bearer_token, device.id)
                     .then(async (rpiToken: string) => {
+                        console.log("Before sending:", {
+                            device,
+                            rpiToken,
+                            wifiName,
+                            wifiPass
+                        })
                         await sendWiFiCredentials(
                             device,
                             rpiToken,
@@ -101,6 +107,12 @@ export default function useBLE(): BluetoothLowEnergyApi {
             .then(async (device) => {
                 getDeviceToken(deviceId, bearer_token)
                     .then(async (rpiToken: string) => {
+                        console.log("Before sending:", {
+                            device,
+                            rpiToken,
+                            wifiSSID,
+                            wifiPass
+                        });
                     await sendWiFiCredentials(
                         device,
                         rpiToken,

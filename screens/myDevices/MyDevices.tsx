@@ -1,10 +1,11 @@
 import {View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView} from "react-native";
 import Modal from "../../components/modal";
 import {useUserCredentials} from "../../hooks/useUserCredentials/useUserCredentials";
-import {deleteDevice, getDevices} from "../../hooks/Endpoints";
+import {deleteDevice} from "../../hooks/Endpoints";
+import {DeviceProperties} from "../../types/types";
 
 export default function MyDevices({navigation}: any) {
-    const {token, devices, setAddDeviceSignal} = useUserCredentials();
+    const {token, devices, setDevices} = useUserCredentials();
 
     return (
         <>
@@ -18,8 +19,8 @@ export default function MyDevices({navigation}: any) {
                                     <Text>Device name: {device.name}</Text>
                                 </View>
                                 <TouchableOpacity style={styles.deleteButton} onPress={() => {
-                                    deleteDeviceFromList(token, device.device_id);
-                                    setAddDeviceSignal(prev => !prev);
+                                    deleteDeviceFromList(token, device.device_id, setDevices);
+                                    // setAddDeviceSignal(prev => !prev);
                                 }}>
                                     <Text style={styles.buttonText}>X</Text>
                                 </TouchableOpacity>
@@ -43,7 +44,8 @@ export default function MyDevices({navigation}: any) {
 
 function deleteDeviceFromList(
     token:string,
-    id:string
+    id:string,
+    setDevices: any
 ) {
     Alert.alert(
         "Usuwanie urządzenia",
@@ -63,6 +65,7 @@ function deleteDeviceFromList(
                     deleteDevice(token, id)
                         .then((response) => {
                             console.log(JSON.stringify(response));
+                            setDevices((prev: DeviceProperties[]) => prev.filter((device_obj: DeviceProperties) => device_obj.device_id !== id));
                         })
                         .catch((error) => {
                             console.log(error);
