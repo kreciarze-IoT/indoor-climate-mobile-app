@@ -10,7 +10,7 @@ export type BluetoothLowEnergyApi = {
     requestPermissions(): Promise<boolean>;
     scanForPeripherals(): void;
     bleDevicesList: Device[];
-    connectToDevice(bearer_token: string, deviceId: string, wifiPass: string): void;
+    connectToDevice(bearer_token: string, deviceId: string, wifiPass: string, wifiName: string): void;
     changeDeviceWifiCredentials(bearer_token: string, deviceId: string, wifiPass: string, wifiName: string): void;
 }
 

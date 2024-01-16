@@ -238,7 +238,8 @@ export async function getDeviceToken(
     deviceId: string,
     token: string
 ){
-    return fetch(endpoints.devices + "/" + deviceId + "/token", {
+    const url = `${endpoints.devices}/${deviceId}/token`;
+    return fetch(url, {
         method: 'GET',
         headers: {
             Accept: 'application/json',

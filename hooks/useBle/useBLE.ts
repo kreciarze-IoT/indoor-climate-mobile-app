@@ -5,15 +5,14 @@ import WifiManager from "react-native-wifi-reborn";
 
 import {BleManager, Device} from "react-native-ble-plx";
 import {createDevice, deleteDevice, getDeviceToken} from "../Endpoints";
-import Aes from 'react-native-aes-crypto'
-import {aes_iv, aes_key, ble_write_characteristic, ble_service, ble_read_characteristic, BluetoothLowEnergyApi} from "../../types/types";
+import {BluetoothLowEnergyApi} from "../../types/types";
 import {useUserCredentials} from "../useUserCredentials/useUserCredentials";
 import {
     _enableBluetooth,
     _singleScan,
-    alertNoWifiCredentials, notifyAboutConnecitonResult,
-    notifyAboutConnectingProcess, sendWiFiCredentials, waitForResponse
+    sendWiFiCredentials, waitForResponse
 } from "./bleHelperFunctions";
+import { RSA } from "react-native-rsa-native";
 
 
 
@@ -56,77 +55,65 @@ export default function useBLE(): BluetoothLowEnergyApi {
         });
     }
 
-    const connectToDevice = async (bearer_token: string, deviceId: string, wifiPass: string) => {
-        let wifiName = "";
-        if(wifiPass === ""){
-            alertNoWifiCredentials();
-            return;
-        }
-        await WifiManager.getCurrentWifiSSID()
-            .then(ssid => {
-                wifiName = ssid;
-            })
-            .catch((error) => {
-                console.log(error);
-            });
-        //rozpoczynamy proces łączenia z urządzeniem
-        notifyAboutConnectingProcess();
+    const connectToDevice = async (bearer_token: string, deviceId: string, wifiPass: string, wifiName: string) => {
+        const {public: publicRsaKey, private: privateRsaKey} = await RSA.generateKeys(2048);
+        Alert.alert("Połączenie", "Rozpoczynamy proces łączenia z urządzeniem. Proszę czekać.");
         bleManager.connectToDevice(deviceId)
             .then(async (device) => {
                 createDevice(bearer_token, device.id)
-                    .then(async (rpiToken: string) => {
+                    .then(async (deviceNum: string) => {
                         console.log("Before sending:", {
                             device,
-                            rpiToken,
+                            privateRsaKey,
                             wifiName,
-                            wifiPass
+                            wifiPass,
+                            deviceNum
                         })
                         await sendWiFiCredentials(
                             device,
-                            rpiToken,
+                            privateRsaKey,
                             wifiName,
-                            wifiPass
+                            wifiPass,
+                            deviceNum
                         );
                         await waitForResponse(device, bearer_token);
                     })
-                    .then(() => {
-                        setAddDeviceSignal(prev => !prev);
-                        console.log("Device created successfully")
-                    })
                     .catch((error) => {
                         deleteDevice(bearer_token, device.id)
-                        console.log("An error occurred while creating device", error);
+                        Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. Spróbuj ponownie później.");
                     });
             }
             )
-            .catch((error) => console.log("An error occurred while discovering all services and characteristics", error));
+            .catch((error) => Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. Spróbuj ponownie później."));
     }
 
     const changeDeviceWifiCredentials = async (bearer_token: string, deviceId: string, wifiPass: string, wifiSSID: string) => {
         bleManager.connectToDevice(deviceId)
             .then(async (device) => {
+                //TODO: change to get RSA Public Key from server
                 getDeviceToken(deviceId, bearer_token)
-                    .then(async (rpiToken: string) => {
+                    .then(async (publicKey: string) => {
                         console.log("Before sending:", {
                             device,
-                            rpiToken,
+                            publicKey,
                             wifiSSID,
                             wifiPass
                         });
                     await sendWiFiCredentials(
                         device,
-                        rpiToken,
+                        publicKey,
                         wifiSSID,
-                        wifiPass
+                        wifiPass,
+                        ""
                     );
                     await waitForResponse(device, bearer_token);
                 })
                 .catch((error) => {
-                    console.log("An error occurred while creating device", error);
+                    Alert.alert("Błąd połączenia", "Nie udało się zmienić danych urządzenia. Spróbuj ponownie.")
                 });
             }
             )
-            .catch((error) => console.log("An error occurred while discovering all services and characteristics", error));
+            .catch((error) => Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. Spróbuj ponownie."));
     }
 
     return {

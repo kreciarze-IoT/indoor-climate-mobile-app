@@ -39,13 +39,13 @@ export async function _singleScan(bleManager:BleManager): Promise<Device[]> {
         }, 1000);
     });
 }
-export async function sendWiFiCredentials(device: Device, rpiToken: string, wifiName: string, wifiPass: string): Promise<string> {
-
+export async function sendWiFiCredentials(device: Device, privateRsaKey: string, wifiName: string, wifiPass: string, deviceNum: string): Promise<string> {
     const message = JSON.stringify({
         wifi_ssid: wifiName,
         wifi_password: wifiPass,
         host: "https://krecikiot.cytr.us/",
-        auth_token: rpiToken
+        private_key: privateRsaKey,
+        device_id: deviceNum
     });
     const fullEncryptedMessage = await encryptData(message)
     device.writeCharacteristicWithoutResponseForService(
@@ -53,8 +53,29 @@ export async function sendWiFiCredentials(device: Device, rpiToken: string, wifi
         ble_write_characteristic,
         Buffer.from(fullEncryptedMessage, "utf8").toString("base64")
     )
-        .then((characteristic) => console.log("Data written to characteristic", JSON.stringify(characteristic, null, 2)))
-        .catch((error) => console.log("An error occurred while writing data to characteristic", JSON.stringify(error, null, 2)))
+        .then((characteristic) =>
+            Alert.alert(
+                "Success",
+                "Successfully sent data. Waiting for response.",
+                [
+                    {
+                        text: "Close",
+                        style: "cancel"
+                    }
+                ]
+        ))
+        .catch((error) =>
+            Alert.alert(
+                "Error",
+                "An error occurred while sending data to device.",
+                [
+                    {
+                        text: "Close",
+                        style: "cancel"
+                    }
+                ]
+            )
+        );
     return "";
 }
 
@@ -64,9 +85,7 @@ export function waitForResponse(device: Device, bearerToken:string ): Promise<vo
             console.log("Interval called")
             device.readCharacteristicForService(ble_service, ble_read_characteristic)
                 .then((characteristic) => {
-                    console.log("Data read from characteristic", JSON.stringify(characteristic, null, 2))
                     if (characteristic.value) {
-                        console.log("Characteristic Value: ", characteristic.value)
                         const utfMessage = Buffer.from(characteristic.value, "base64").toString("utf8");
                         const decryptedMessage = decryptData(utfMessage);
                         decryptedMessage.then((value) => {
@@ -74,7 +93,7 @@ export function waitForResponse(device: Device, bearerToken:string ): Promise<vo
                             console.log("Message: ", message)
                             if (message === "s" || message === "f") {
                                 clearInterval(interval);
-                                notifyAboutConnecitonResult(message === "s")
+                                notifyAboutConnecitonResult(message)
                                 if(message === "f") deleteDevice(bearerToken, device.id)
                             }
                         });
@@ -99,25 +118,12 @@ export function alertNoWifiCredentials() {
     );
 }
 
-export function notifyAboutConnectingProcess() {
-    Alert.alert(
-        "Connecting to device",
-        "Please wait",
-        [
-            {
-                text: "Close",
-                style: "cancel"
-            }
-        ]
-    );
-}
-
 export function notifyAboutConnecitonResult(
-    result: boolean
+    result: string
 ) {
     Alert.alert(
         "Connection result: ",
-        result ? "Successfully connected to device" : "Failed to connect to device",
+        result === "s" ? "Successfully connected to device" : "Failed to connect to device",
         [
             {
                 text: "Close",
