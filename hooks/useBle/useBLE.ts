@@ -60,31 +60,37 @@ export default function useBLE(): BluetoothLowEnergyApi {
         Alert.alert("Połączenie", "Rozpoczynamy proces łączenia z urządzeniem. Proszę czekać.");
         bleManager.connectToDevice(deviceId)
             .then(async (device) => {
+                return device.discoverAllServicesAndCharacteristics()
+            })
+            .then(async (device) => {
                 createDevice(bearer_token, device.id)
                     .then(async (deviceNum: string) => {
-                        console.log("Before sending:", {
-                            device,
-                            privateRsaKey,
-                            wifiName,
-                            wifiPass,
-                            deviceNum
-                        })
-                        await sendWiFiCredentials(
+                        // console.log("Before sending:", {
+                        //     device,
+                        //     privateRsaKey,
+                        //     wifiName,
+                        //     wifiPass,
+                        //     deviceNum
+                        // })
+                        const success = await sendWiFiCredentials(
                             device,
                             privateRsaKey,
                             wifiName,
                             wifiPass,
                             deviceNum
                         );
-                        await waitForResponse(device, bearer_token);
+                        console.log({
+                            success
+                        })
+                        if(success)
+                            await waitForResponse(device, bearer_token);
                     })
                     .catch((error) => {
                         deleteDevice(bearer_token, device.id)
-                        Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. Spróbuj ponownie później.");
+                        Alert.alert("Błąd połączenia", "Nie udało się połączyć z serwerem. Błąd: " + error);
                     });
-            }
-            )
-            .catch((error) => Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. Spróbuj ponownie później."));
+            })
+            .catch((error) => Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. Błąd: " + error));
     }
 
     const changeDeviceWifiCredentials = async (bearer_token: string, deviceId: string, wifiPass: string, wifiSSID: string) => {

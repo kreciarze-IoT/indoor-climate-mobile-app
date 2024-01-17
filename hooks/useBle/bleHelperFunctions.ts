@@ -28,6 +28,7 @@ export async function _singleScan(bleManager:BleManager): Promise<Device[]> {
         if (
             device
             && !_isDuplicteDevice(devices, device)
+            && device.name
         ) {
             devices.push(device);
         }
@@ -36,10 +37,11 @@ export async function _singleScan(bleManager:BleManager): Promise<Device[]> {
         setTimeout(() => {
             bleManager.stopDeviceScan();
             resolve(devices);
-        }, 1000);
+        }, 2000);
     });
 }
-export async function sendWiFiCredentials(device: Device, privateRsaKey: string, wifiName: string, wifiPass: string, deviceNum: string): Promise<string> {
+export async function sendWiFiCredentials(device: Device, privateRsaKey: string, wifiName: string, wifiPass: string, deviceNum: string): Promise<boolean> {
+    let connected = false;
     const message = JSON.stringify({
         wifi_ssid: wifiName,
         wifi_password: wifiPass,
@@ -48,35 +50,39 @@ export async function sendWiFiCredentials(device: Device, privateRsaKey: string,
         device_id: deviceNum
     });
     const fullEncryptedMessage = await encryptData(message)
-    device.writeCharacteristicWithoutResponseForService(
+    device.writeCharacteristicWithResponseForService(
         ble_service,
         ble_write_characteristic,
         Buffer.from(fullEncryptedMessage, "utf8").toString("base64")
     )
         .then((characteristic) =>
+        {
+            console.log("Characteristic: ", characteristic)
+            connected = true;
             Alert.alert(
                 "Success",
-                "Successfully sent data. Waiting for response.",
+                "Udało się wysłać dane. Oczekiwanie na odpowiedź urządzenia.",
                 [
                     {
-                        text: "Close",
+                        text: "Ok",
                         style: "cancel"
                     }
-                ]
-        ))
-        .catch((error) =>
-            Alert.alert(
-                "Error",
-                "An error occurred while sending data to device.",
-                [
-                    {
-                        text: "Close",
-                        style: "cancel"
-                    }
-                ]
-            )
+                ])
+        })
+        .catch( (error) => {
+                Alert.alert(
+                    "Error",
+                    "Nie udało się wysłać danych. Błąd: " + error,
+                    [
+                        {
+                            text: "Zamknij",
+                            style: "cancel"
+                        }
+                    ]
+                )
+            }
         );
-    return "";
+    return connected;
 }
 
 export function waitForResponse(device: Device, bearerToken:string ): Promise<void>{

@@ -137,6 +137,9 @@ type createDeviceResponse = {
 }
 
 export async function createDevice(token: string, deviceId: string){
+    return new Promise<string>((resolve, reject) => {
+        resolve("123");
+    });
     return fetch(endpoints.devices, {
         method: 'POST',
         headers: {
@@ -150,6 +153,7 @@ export async function createDevice(token: string, deviceId: string){
     })
         .then(response => response.json())
         .then((data: createDeviceResponse) => {
+            //TODO: change to get Device ID from server
             return data.device_bearer_token;
         })
         .catch((error) => {
@@ -162,27 +166,6 @@ export async function deleteDevice(token: string, deviceId: string){
     const url = `${endpoints.devices}/${deviceId}`;
     return fetch(url, {
         method: 'DELETE',
-        headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
-    })
-        .then(response => response.json())
-        .then(data => {
-            return data;
-        })
-        .catch((error) => {
-            Alert.alert("Błąd serwera! Spróbuj ponownie później.");
-        });
-}
-
-export async function logDevice(
-    token: string,
-    deviceId: string
-){
-    return fetch(endpoints.devices + "/" + deviceId + "/login", {
-        method: 'POST',
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
@@ -238,6 +221,9 @@ export async function getDeviceToken(
     deviceId: string,
     token: string
 ){
+    return new Promise<string>((resolve, reject) => {
+        resolve("123");
+    });
     const url = `${endpoints.devices}/${deviceId}/token`;
     return fetch(url, {
         method: 'GET',
@@ -249,6 +235,7 @@ export async function getDeviceToken(
     })
         .then(response => response.json())
         .then(data => {
+            //TODO: change to get RSA Public Key from server
             return data.device_bearer_token;
         })
         .catch((error) => {
