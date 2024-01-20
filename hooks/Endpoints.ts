@@ -10,6 +10,13 @@ const endpoints = {
     records: url + "/records"
 }
 
+type createDeviceResponse = {
+    device_bearer_token: string
+    device_id: string
+    name: string
+}
+
+
 export async function handleRegister(
     navigation: any,
     login: string,
@@ -65,10 +72,6 @@ export async function handleLogin(
     setVerifiedPassword: (password: string) => void,
     setToken: (token: string) => void
 ){
-    console.log({
-        login,
-        password
-    })
     return fetch(endpoints.login, {
         method: 'POST',
         headers: {
@@ -130,16 +133,8 @@ export async function getDevices(token: string){
         });
 }
 
-type createDeviceResponse = {
-    device_bearer_token: string
-    device_id: string
-    name: string
-}
 
-export async function createDevice(token: string, deviceId: string){
-    return new Promise<string>((resolve, reject) => {
-        resolve("123");
-    });
+export async function createDevice(token: string, deviceId: string, aesKey: string){
     return fetch(endpoints.devices, {
         method: 'POST',
         headers: {
@@ -148,13 +143,13 @@ export async function createDevice(token: string, deviceId: string){
             'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-            name: deviceId
+            name: deviceId,
+            key: aesKey
         })
     })
         .then(response => response.json())
-        .then((data: createDeviceResponse) => {
-            //TODO: change to get Device ID from server
-            return data.device_bearer_token;
+        .then((data) => {
+            return data.device_id;
         })
         .catch((error) => {
             Alert.alert("Błąd serwera! Spróbuj ponownie później.");
@@ -217,14 +212,11 @@ export async function getRecords(
         });
 }
 
-export async function getDeviceToken(
+export async function getDeviceKey(
     deviceId: string,
     token: string
-){
-    return new Promise<string>((resolve, reject) => {
-        resolve("123");
-    });
-    const url = `${endpoints.devices}/${deviceId}/token`;
+) :Promise<string>{
+    const url = `${endpoints.devices}/${deviceId}/device-key`;
     return fetch(url, {
         method: 'GET',
         headers: {
@@ -234,11 +226,11 @@ export async function getDeviceToken(
         }
     })
         .then(response => response.json())
-        .then(data => {
-            //TODO: change to get RSA Public Key from server
-            return data.device_bearer_token;
+        .then((data: {device_key: string}) => {
+            return data.device_key || "";
         })
         .catch((error) => {
             Alert.alert("Błąd serwera! Spróbuj ponownie później.");
-        });
+            return "";
+        })
 }

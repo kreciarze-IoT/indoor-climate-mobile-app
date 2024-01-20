@@ -40,13 +40,13 @@ export async function _singleScan(bleManager:BleManager): Promise<Device[]> {
         }, 2000);
     });
 }
-export async function sendWiFiCredentials(device: Device, privateRsaKey: string, wifiName: string, wifiPass: string, deviceNum: string): Promise<boolean> {
+export async function sendWiFiCredentials(device: Device, aesKey: string, wifiName: string, wifiPass: string, deviceNum: string): Promise<boolean> {
     let connected = false;
     const message = JSON.stringify({
         wifi_ssid: wifiName,
         wifi_password: wifiPass,
         host: "https://krecikiot.cytr.us/",
-        private_key: privateRsaKey,
+        aes_key: aesKey,
         device_id: deviceNum
     });
     const fullEncryptedMessage = await encryptData(message)

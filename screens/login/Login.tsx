@@ -52,11 +52,6 @@ function Login({navigation}: any){
                 }>
                     <Text style={styles.buttonText}>Register</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={
-                    () => navigation.navigate("Dashboard")
-                }>
-                    <Text style={styles.buttonText}>Dashboard</Text>
-                </TouchableOpacity>
             </View>
         </View>
     )

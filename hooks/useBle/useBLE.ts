@@ -4,7 +4,7 @@ import {Alert, PermissionsAndroid, Platform} from "react-native";
 import WifiManager from "react-native-wifi-reborn";
 
 import {BleManager, Device} from "react-native-ble-plx";
-import {createDevice, deleteDevice, getDeviceToken} from "../Endpoints";
+import {createDevice, deleteDevice, getDeviceKey} from "../Endpoints";
 import {BluetoothLowEnergyApi} from "../../types/types";
 import {useUserCredentials} from "../useUserCredentials/useUserCredentials";
 import {
@@ -13,6 +13,7 @@ import {
     sendWiFiCredentials, waitForResponse
 } from "./bleHelperFunctions";
 import { RSA } from "react-native-rsa-native";
+import Aes from "react-native-aes-crypto";
 
 
 
@@ -56,25 +57,16 @@ export default function useBLE(): BluetoothLowEnergyApi {
     }
 
     const connectToDevice = async (bearer_token: string, deviceId: string, wifiPass: string, wifiName: string) => {
-        const {public: publicRsaKey, private: privateRsaKey} = await RSA.generateKeys(2048);
+        const aesKey = await Aes.randomKey(256);
         Alert.alert("Połączenie", "Rozpoczynamy proces łączenia z urządzeniem. Proszę czekać.");
         bleManager.connectToDevice(deviceId)
+            .then(async (device) => device.discoverAllServicesAndCharacteristics())
             .then(async (device) => {
-                return device.discoverAllServicesAndCharacteristics()
-            })
-            .then(async (device) => {
-                createDevice(bearer_token, device.id)
+                createDevice(bearer_token, device.id, aesKey)
                     .then(async (deviceNum: string) => {
-                        // console.log("Before sending:", {
-                        //     device,
-                        //     privateRsaKey,
-                        //     wifiName,
-                        //     wifiPass,
-                        //     deviceNum
-                        // })
                         const success = await sendWiFiCredentials(
                             device,
-                            privateRsaKey,
+                            aesKey,
                             wifiName,
                             wifiPass,
                             deviceNum
@@ -96,22 +88,21 @@ export default function useBLE(): BluetoothLowEnergyApi {
     const changeDeviceWifiCredentials = async (bearer_token: string, deviceId: string, wifiPass: string, wifiSSID: string) => {
         bleManager.connectToDevice(deviceId)
             .then(async (device) => {
-                //TODO: change to get RSA Public Key from server
-                getDeviceToken(deviceId, bearer_token)
-                    .then(async (publicKey: string) => {
+                getDeviceKey(deviceId, bearer_token)
+                    .then(async (aesKey: string) => {
                         console.log("Before sending:", {
                             device,
-                            publicKey,
+                            aesKey,
                             wifiSSID,
                             wifiPass
                         });
-                    await sendWiFiCredentials(
-                        device,
-                        publicKey,
-                        wifiSSID,
-                        wifiPass,
-                        ""
-                    );
+                    // await sendWiFiCredentials(
+                    //     device,
+                    //     deviceId,
+                    //     wifiSSID,
+                    //     wifiPass,
+                    //     ""
+                    // );
                     await waitForResponse(device, bearer_token);
                 })
                 .catch((error) => {
