@@ -137,6 +137,9 @@ type createDeviceResponse = {
 }
 
 export async function createDevice(token: string, deviceId: string){
+    return new Promise<string>((resolve, reject) => {
+        resolve("test");
+    });
     return fetch(endpoints.devices, {
         method: 'POST',
         headers: {

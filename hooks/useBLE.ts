@@ -55,7 +55,7 @@ function useBLE(): BluetoothLowEnergyApi {
     }
 
     const connectToDevice = async (bearer_token: string, deviceId: string, wifiPass: string) => {
-
+        // Alert.alert("Connecting to device", "Please wait");
         let wifiName = "";
         if(wifiPass === ""){
             AlertNoWifiCredentials();
@@ -68,6 +68,7 @@ function useBLE(): BluetoothLowEnergyApi {
             .catch((error) => {
                 console.log(error);
             });
+        const aesKey = await Aes.randomKey(256);
         //rozpoczynamy proces łączenia z urządzeniem
         bleManager.connectToDevice(deviceId)
             .then(async (device) => {
@@ -80,7 +81,8 @@ function useBLE(): BluetoothLowEnergyApi {
                                         device,
                                         rpiToken,
                                         wifiName,
-                                        wifiPass
+                                        wifiPass,
+                                        aesKey
                                     );
                                 })
                                 .then(() => {
@@ -139,14 +141,15 @@ async function _singleScan(bleManager:BleManager): Promise<Device[]> {
         }, 1000);
     });
 }
-async function sendWiFiCredentials(bearer_token: string, device: Device, rpiToken: string, wifiName: string, wifiPass: string): Promise<string> {
+async function sendWiFiCredentials(bearer_token: string, device: Device, serverDeviceID: string, wifiName: string, wifiPass: string, aesKey:string): Promise<string> {
     const service = "00000001-710e-4a5b-8d75-3e5b444bc3cf";
     const characteristic = "00000004-710e-4a5b-8d75-3e5b444bc3cf";
     const message = JSON.stringify({
         wifi_ssid: wifiName,
         wifi_password: wifiPass,
         host: "https://krecikiot.cytr.us/",
-        auth_token: rpiToken
+        aes_key: aesKey,
+        device_id: serverDeviceID
     });
     const fullEncryptedMessage = await encryptData(message)
     device.writeCharacteristicWithoutResponseForService(
