@@ -12,6 +12,7 @@ export default function AddDevices(
     let scanInterval = useRef<any>(null);
     let isScanning = useRef<boolean>(false);
     const [permissions, setPermissions] = useState(false);
+    const [wifiSSID, setWifiSSID] = useState('');
     const [wifiPass, setWifiPass] = useState('');
     const {
         requestPermissions,
@@ -29,11 +30,16 @@ export default function AddDevices(
     return (
         <>
             <View>
+                <TextInput  style={styles.textInput} placeholder={"Enter wifi ssid"}
+                            onChangeText={text => {
+                                setWifiSSID(text)}
+                            }
+                            value={wifiSSID} />
                 <TextInput  style={styles.textInput} placeholder={"Enter wifi password"}
                             onChangeText={text => {
                                 setWifiPass(text)}
                             }
-                            value={wifiPass} secureTextEntry={true} />
+                            value={wifiPass} />
             </View>
         <View style={styles.container}>
             <Text style={styles.text}>Click "Scan" to start scanning area for devices.</Text>
@@ -83,7 +89,7 @@ export default function AddDevices(
                                 onPress={() => {
                                     clearInterval(scanInterval.current);
                                     isScanning.current = false;
-                                    connectToDevice(token ,device.id, wifiPass);
+                                    connectToDevice(token ,device.id, wifiSSID, wifiPass);
                                 }}
                                 key={device.id}
                             >

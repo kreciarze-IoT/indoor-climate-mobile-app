@@ -54,33 +54,27 @@ function useBLE(): BluetoothLowEnergyApi {
         });
     }
 
-    const connectToDevice = async (bearer_token: string, deviceId: string, wifiPass: string) => {
-
-        let wifiName = "";
-        if(wifiPass === ""){
+    const connectToDevice = async (bearer_token: string, deviceId: string, wifiName: string, wifiPass: string) => {
+        Alert.alert("Łączenie z urządzeniem", "Proszę czekać...");
+        if(wifiPass === "" || wifiName === ""){
             AlertNoWifiCredentials();
             return;
         }
-        await WifiManager.getCurrentWifiSSID()
-            .then(ssid => {
-                wifiName = ssid;
-            })
-            .catch((error) => {
-                console.log(error);
-            });
+        const aesKey = await Aes.randomKey(32);
         //rozpoczynamy proces łączenia z urządzeniem
         bleManager.connectToDevice(deviceId)
             .then(async (device) => {
                 device.discoverAllServicesAndCharacteristics()
                     .then((device) => {
                             createDevice(bearer_token, device.id)
-                                .then(async (rpiToken: string) => {
+                                .then(async (serverDeviceID: string) => {
                                     const response = await sendWiFiCredentials(
                                         bearer_token,
                                         device,
-                                        rpiToken,
+                                        aesKey,
                                         wifiName,
-                                        wifiPass
+                                        wifiPass,
+                                        serverDeviceID
                                     );
                                 })
                                 .then(() => {
@@ -139,14 +133,15 @@ async function _singleScan(bleManager:BleManager): Promise<Device[]> {
         }, 1000);
     });
 }
-async function sendWiFiCredentials(bearer_token: string, device: Device, rpiToken: string, wifiName: string, wifiPass: string): Promise<string> {
+async function sendWiFiCredentials(bearer_token: string, device: Device, aesKey: string, wifiName: string, wifiPass: string, serverDeviceID: string): Promise<string> {
     const service = "00000001-710e-4a5b-8d75-3e5b444bc3cf";
     const characteristic = "00000004-710e-4a5b-8d75-3e5b444bc3cf";
     const message = JSON.stringify({
         wifi_ssid: wifiName,
         wifi_password: wifiPass,
         host: "https://krecikiot.cytr.us/",
-        auth_token: rpiToken
+        aes_key: aesKey,
+        device_id: serverDeviceID
     });
     const fullEncryptedMessage = await encryptData(message)
     device.writeCharacteristicWithoutResponseForService(
