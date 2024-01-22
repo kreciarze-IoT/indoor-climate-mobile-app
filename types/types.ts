@@ -5,6 +5,7 @@ export const aes_key = "306f56538ca5ecbc416a58480102f5f0735bf4fe29d409b81a18f621
 export const ble_service = "00000001-710e-4a5b-8d75-3e5b444bc3cf";
 export const ble_write_characteristic = "00000004-710e-4a5b-8d75-3e5b444bc3cf";
 export const ble_read_characteristic = "00000004-710e-4a5b-8d75-3e5b444bc3cf";
+export const ble_read_UUID_characteristic = "00000005-710e-4a5b-8d75-3e5b444bc3cf";
 
 export type BluetoothLowEnergyApi = {
     requestPermissions(): Promise<boolean>;

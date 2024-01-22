@@ -1,18 +1,22 @@
 /* eslint-disable no-bitwise */
 import {useMemo, useState} from "react";
 import {Alert, PermissionsAndroid, Platform} from "react-native";
-import WifiManager from "react-native-wifi-reborn";
 
 import {BleManager, Device} from "react-native-ble-plx";
 import {createDevice, deleteDevice, getDeviceKey} from "../Endpoints";
-import {BluetoothLowEnergyApi} from "../../types/types";
+import {
+    ble_read_characteristic,
+    ble_read_UUID_characteristic,
+    ble_service,
+    BluetoothLowEnergyApi,
+    aes_key, aes_iv
+} from "../../types/types";
 import {useUserCredentials} from "../useUserCredentials/useUserCredentials";
 import {
     _enableBluetooth,
-    _singleScan,
+    _singleScan, decryptData,
     sendWiFiCredentials, waitForResponse
 } from "./bleHelperFunctions";
-import { RSA } from "react-native-rsa-native";
 import Aes from "react-native-aes-crypto";
 
 
@@ -56,33 +60,35 @@ export default function useBLE(): BluetoothLowEnergyApi {
         });
     }
 
-    const connectToDevice = async (bearer_token: string, deviceId: string, wifiPass: string, wifiName: string) => {
-        const aesKey = await Aes.randomKey(256);
-        Alert.alert("Połączenie", "Rozpoczynamy proces łączenia z urządzeniem. Proszę czekać.");
-        bleManager.connectToDevice(deviceId)
+    const connectToDevice = (bearer_token: string, deviceId: string, wifiPass: string, wifiName: string) => {
+        // Alert.alert("Połączenie", "Rozpoczynamy proces łączenia z urządzeniem. Proszę czekać.");
+        //ŁĄCZENIE Z URZĄDZENIEM
+        bleManager.connectToDevice(
+            deviceId,
+            {requestMTU: 1024}
+        )
             .then(async (device) => device.discoverAllServicesAndCharacteristics())
             .then(async (device) => {
-                createDevice(bearer_token, device.id, aesKey)
-                    .then(async (deviceNum: string) => {
-                        const success = await sendWiFiCredentials(
-                            device,
-                            aesKey,
-                            wifiName,
-                            wifiPass,
-                            deviceNum
-                        );
-                        console.log({
-                            success
-                        })
-                        if(success)
-                            await waitForResponse(device, bearer_token);
-                    })
-                    .catch((error) => {
-                        deleteDevice(bearer_token, device.id)
-                        Alert.alert("Błąd połączenia", "Nie udało się połączyć z serwerem. Błąd: " + error);
-                    });
+                //WYCIĄGANIE UUID Z URZĄDZENIA
+                const deviceUUIDBase64 = await device.readCharacteristicForService(ble_service, ble_read_UUID_characteristic);
+                const deviceUUIDutf8 = Buffer.from(deviceUUIDBase64.value || "", "base64").toString("utf8");
+                const deviceUUID = await decryptData(deviceUUIDutf8);
+                // Alert.alert("Otrzymano id", "Otrzymano id urządzenia: " + deviceUUID);
+                //GENERACJA KLUCZA I WYSŁANIE DO SERWERA ORAZ URZĄDZENIA
+                const aesKey = await Aes.randomKey(128);
+                const serverResponsePromise = createDevice(bearer_token, device.id, aesKey, deviceUUID);
+                const rpiResponsePromise = sendWiFiCredentials(device, aesKey, wifiName, wifiPass);
+                const serverResponse = await serverResponsePromise;
+                const rpiResponse = await rpiResponsePromise;
+                //CZEKANIE NA ODPOWIEDZI
+                if(serverResponse && rpiResponse) {
+                    setTimeout(async () => {
+                        await waitForResponse(device, bearer_token);
+                    } , 2500);
+                }
+                else Alert.alert("Fail!", "Odpowiedzi od serwera i urządzenia nie otrzymane - serwer: " + serverResponse + " i rpi: " + rpiResponse);
             })
-            .catch((error) => Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. Błąd: " + error));
+            .catch((error) => Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. Błąd: " + error))
     }
 
     const changeDeviceWifiCredentials = async (bearer_token: string, deviceId: string, wifiPass: string, wifiSSID: string) => {

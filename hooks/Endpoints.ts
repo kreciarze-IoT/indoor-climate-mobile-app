@@ -134,9 +134,10 @@ export async function getDevices(token: string){
 }
 
 
-export async function createDevice(token: string, deviceId: string, aesKey: string){
-    return fetch(endpoints.devices, {
-        method: 'POST',
+export async function createDevice(token: string, deviceId: string, aesKey: string, deviceUUID: string): Promise<string>{
+    const url = `${endpoints.devices}/${deviceId}/assign`;
+    return fetch(url, {
+        method: 'PATCH',
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
@@ -147,13 +148,10 @@ export async function createDevice(token: string, deviceId: string, aesKey: stri
             key: aesKey
         })
     })
-        .then(response => response.json())
-        .then((data) => {
-            return data.device_id;
-        })
+        .then(response => "OK")
         .catch((error) => {
             Alert.alert("Błąd serwera! Spróbuj ponownie później.");
-            return "";
+            throw error;
         });
 }
 
