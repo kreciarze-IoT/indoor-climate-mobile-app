@@ -14,39 +14,26 @@ export default function EditWifiSSid(
     }
 ) {
     const {navigation, route} = props;
-    const {device_mac} = route.params;
+    const {device_id: deviceMac, deviceUUID} = route.params;
     const {changeDeviceWifiCredentials} = useBLE();
     const {token} = useUserCredentials();
     const [wifiSSID, setWifiSSID] = useState("");
-    const [wifiList, setWifiList] = useState([] as WifiManager.WifiEntry[]);
     const [newWifiPassword, setNewWifiPassword] = useState("");
-
-    useEffect(() => {
-        WifiManager.loadWifiList().then((wifiList) => {
-            setWifiList(wifiList);
-        });
-    }, []);
+    console.log(deviceMac, deviceUUID)
 
     return (
         <>
             <View style={styles.container}>
-                <Picker style={styles.picker} selectedValue={wifiSSID} onValueChange={
-                    (itemValue, itemIndex) => {
-                        setWifiSSID(itemValue);
-                    }
-                }>
-                    {wifiList.length > 0 && wifiList.map((wifi, index) => {
-                        return (
-                            <Picker.Item key={index} label={wifi.SSID} value={wifi.SSID} />
-                        )
-                    })}
-                </Picker>
+                <TextInput placeholder={"Enter new Wifi SSID"} onChange={(event) => {
+                    setWifiSSID(event.nativeEvent.text);
+                }
+                } style={styles.textInput} />
                 <TextInput placeholder={"Enter new Wifi password"} onChange={(event) => {
                     setNewWifiPassword(event.nativeEvent.text);
-                } } style={styles.textInput} secureTextEntry={true} />
+                } } style={styles.textInput} />
                 <TouchableOpacity style={styles.actionButtons} onPress={
                     () => {
-                        changeDeviceWifiCredentials(token, device_mac, wifiSSID, newWifiPassword);
+                        changeDeviceWifiCredentials(token, deviceMac, deviceUUID, wifiSSID, newWifiPassword);
                     }
                 }>
                     <Text style={styles.whiteText}>EditWifiSSid</Text>

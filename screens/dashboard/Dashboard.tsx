@@ -11,12 +11,13 @@ import {useUserCredentials} from "../../hooks/useUserCredentials/useUserCredenti
 import {SetStateAction, useEffect, useState} from "react";
 import {getDevices, getRecords} from "../../hooks/Endpoints";
 import Record from "../../components/weatherRecordCard";
-import {WeatherRecord} from "../../types/types";
+import {DeviceProperties, WeatherRecord} from "../../types/types";
+import Aes from "react-native-aes-crypto";
 
 
 
 function Dashboard({navigation}: any) {
-    let { verifiedLogin, token, devices} = useUserCredentials();
+    let { verifiedLogin, token, devices, setDevices} = useUserCredentials();
     if(verifiedLogin === ""){ verifiedLogin = "User" }
     const [dateFrom, setDateFrom] = useState<Date>(new Date());
     const [dateTo, setDateTo] = useState<Date>(new Date());
@@ -26,9 +27,9 @@ function Dashboard({navigation}: any) {
     const [records, setRecords] = useState([] as WeatherRecord[]);
 
 
-
     return (
         <>
+
             <ScrollView>
                 <View>
                     <Text style={styles.welcomeText}>Welcome, {verifiedLogin}!</Text>
@@ -38,12 +39,21 @@ function Dashboard({navigation}: any) {
                             setSelectedDevice(itemValue);
                         }
                     }>
-                        {devices.length > 0 && devices.map((device, index) => {
-                            return (
-                                <Picker.Item key={index} label={`Device ${device.device_id} (${device.name})`} value={device.device_id} />
+                        {devices?.length > 0 && devices.map((device, index) => {
+                            return (device.activated &&
+                                <Picker.Item key={index} label={`Device ${device.id} (${device.name})`} value={device.id} />
                             )
                         })}
                     </Picker>
+                    <Text style={styles.grayText}>Can't see your devices? Try to refresh</Text>
+                    <TouchableOpacity style={styles.refreshButton} onPress={() => {
+                        getDevices(token).then((devices: DeviceProperties[]) => {
+                            setDevices(() => devices);
+                        });
+                    }
+                    }>
+                        <Text style={styles.buttonText}>Refresh</Text>
+                    </TouchableOpacity>
                 </View>
                 <View>
                     <View style={styles.intervalsContainer}>
@@ -75,7 +85,9 @@ function Dashboard({navigation}: any) {
                                 }
                             } />
                         )}
+
                         <View style={styles.submitButtonContainer}>
+
                             <TouchableOpacity style={styles.submitButton} onPress={() => {
                                 getRecords(token, selectedDevice, dateFrom, dateTo)
                                     .then((data:WeatherRecord[]) => {
@@ -191,5 +203,26 @@ let styles = StyleSheet.create({
         borderRadius: 10,
         margin: 10,
         paddingHorizontal: 10,
+    },
+    refreshButton: {
+        backgroundColor: "blue",
+        padding: 10,
+        borderRadius: 4,
+        width: "80%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginVertical: 10,
+        alignSelf: "center"
+    },
+    grayText: {
+        color: "gray",
+        textAlign: "center",
+        marginTop: 10
+    },
+    buttonText: {
+        fontSize: 14,
+        color: "white",
+        textAlign: "center"
     }
 });

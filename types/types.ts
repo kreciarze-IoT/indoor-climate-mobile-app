@@ -12,7 +12,7 @@ export type BluetoothLowEnergyApi = {
     scanForPeripherals(): void;
     bleDevicesList: Device[];
     connectToDevice(bearer_token: string, deviceId: string, wifiPass: string, wifiName: string): void;
-    changeDeviceWifiCredentials(bearer_token: string, deviceId: string, wifiPass: string, wifiName: string): void;
+    changeDeviceWifiCredentials(bearer_token: string, deviceMac:string, deviceUUID: string, wifiPass: string, wifiName: string): void;
 }
 
 export type decryptedData = {
@@ -34,6 +34,8 @@ export type WeatherRecord = {
 }
 
 export type DeviceProperties = {
-    device_id: string,
-    name: string
+    id: string,
+    user_id: number,
+    name: string,
+    activated: boolean
 }

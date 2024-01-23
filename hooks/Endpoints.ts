@@ -134,8 +134,8 @@ export async function getDevices(token: string){
 }
 
 
-export async function createDevice(token: string, deviceId: string, aesKey: string, deviceUUID: string): Promise<string>{
-    const url = `${endpoints.devices}/${deviceId}/assign`;
+export async function assignDevice(token: string, deviceName: string, aesKey: string, deviceUUID: string): Promise<string>{
+    const url = `${endpoints.devices}/${deviceUUID}/assign`;
     return fetch(url, {
         method: 'PATCH',
         headers: {
@@ -144,21 +144,22 @@ export async function createDevice(token: string, deviceId: string, aesKey: stri
             'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-            name: deviceId,
+            name: deviceName,
             key: aesKey
         })
     })
-        .then(response => "OK")
+        .then(response => {
+            return "ok";
+        })
         .catch((error) => {
-            Alert.alert("Błąd serwera! Spróbuj ponownie później.");
             throw error;
         });
 }
 
-export async function deleteDevice(token: string, deviceId: string){
-    const url = `${endpoints.devices}/${deviceId}`;
+export async function unassignDevice(token: string, deviceId: string){
+    const url = `${endpoints.devices}/${deviceId}/unassign`;
     return fetch(url, {
-        method: 'DELETE',
+        method: 'PATCH',
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
@@ -224,8 +225,8 @@ export async function getDeviceKey(
         }
     })
         .then(response => response.json())
-        .then((data: {device_key: string}) => {
-            return data.device_key || "";
+        .then((data: {key: string}) => {
+            return data.key || "";
         })
         .catch((error) => {
             Alert.alert("Błąd serwera! Spróbuj ponownie później.");

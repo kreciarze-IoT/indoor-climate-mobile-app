@@ -1,6 +1,8 @@
 import {createContext, useContext, useState, Dispatch, SetStateAction, useEffect} from "react";
 import {DeviceProperties} from "../../types/types";
 import {getDevices} from "../Endpoints";
+import Aes from "react-native-aes-crypto";
+import {decryptData, encryptData} from "../useBle/bleHelperFunctions";
 
 const UserCredentialsContext = createContext({
     verifiedLogin: '',
@@ -10,8 +12,7 @@ const UserCredentialsContext = createContext({
     token: '',
     setToken: (token: string) => {},
     devices: [] as DeviceProperties[],
-    setDevices: (devices: (prev: DeviceProperties[]) => DeviceProperties[]) => {},
-    setAddDeviceSignal: (state: (prev: boolean) => boolean) => {},
+    setDevices: (devices: (prev: DeviceProperties[]) => DeviceProperties[]) => {}
 });
 
 export function useUserCredentials () {
@@ -23,17 +24,17 @@ export default function UserCredentialsProvider({children}: any) {
     const [password, setPassword] = useState('');
     const [token, setToken] = useState('');
     const [devicesArray, setDevicesArray] = useState([] as DeviceProperties[]);
-    const [addDeviceSignal, setAddDeviceSignal] = useState(false);
 
     useEffect(() => {
         getDevices(token)
-            .then((devices) => {
+            .then((devices: DeviceProperties[]) => {
                 setDevicesArray(devices);
+                console.log(devices)
             })
             .catch((error) => {
                 console.log(error);
             })
-    }, [token, addDeviceSignal]);
+    }, [token]);
 
     return (
         <UserCredentialsContext.Provider value={{
@@ -45,7 +46,6 @@ export default function UserCredentialsProvider({children}: any) {
             setToken: setToken,
             devices: devicesArray,
             setDevices: setDevicesArray,
-            setAddDeviceSignal: setAddDeviceSignal,
         }}>
             {children}
         </UserCredentialsContext.Provider>

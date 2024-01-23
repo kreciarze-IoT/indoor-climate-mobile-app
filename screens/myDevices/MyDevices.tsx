@@ -1,7 +1,7 @@
 import {View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView} from "react-native";
 import Modal from "../../components/modal";
 import {useUserCredentials} from "../../hooks/useUserCredentials/useUserCredentials";
-import {deleteDevice} from "../../hooks/Endpoints";
+import {getDevices, unassignDevice} from "../../hooks/Endpoints";
 import {DeviceProperties} from "../../types/types";
 
 export default function MyDevices({navigation}: any) {
@@ -9,25 +9,38 @@ export default function MyDevices({navigation}: any) {
 
     return (
         <>
+            <Text style={styles.grayText}>Can't see your devices? Try to refresh</Text>
+            <TouchableOpacity style={styles.refreshButton} onPress={() => {
+                getDevices(token).then((devices: DeviceProperties[]) => {
+                    setDevices(() => devices);
+                });
+            }
+            }>
+                <Text style={styles.buttonText}>Refresh</Text>
+            </TouchableOpacity>
             <ScrollView contentContainerStyle={styles.cardsContainer}>
                 {devices.length > 0 && devices.map((device, index) => {
                     return (
                         <View style={styles.deviceContainer} key={index}>
                             <View style={styles.deviceCard}>
                                 <View>
-                                    <Text>Device id: {device.device_id}</Text>
+                                    <Text>Device id: {device.id}</Text>
                                     <Text>Device name: {device.name}</Text>
+                                    <Text>Activated: {device.activated ? "Yes" : "No"}</Text>
                                 </View>
                                 <TouchableOpacity style={styles.deleteButton} onPress={() => {
-                                    deleteDeviceFromList(token, device.device_id, setDevices);
-                                    // setAddDeviceSignal(prev => !prev);
+                                    deleteDeviceFromList(token, `${device.id}`);
+                                    getDevices(token).then((devices: DeviceProperties[]) => {
+                                        setDevices(() => devices);
+                                    });
                                 }}>
                                     <Text style={styles.buttonText}>X</Text>
                                 </TouchableOpacity>
                             </View>
                             <TouchableOpacity onPress={() => {
                                 navigation.navigate("EditWifiSSid", {
-                                    device_id: device.name
+                                    device_id: device.name,
+                                    deviceUUID: device.id
                                 });
                             }} style={styles.blueButton}>
                                 <Text style={styles.whiteText}>Change Wifi SSID</Text>
@@ -36,16 +49,15 @@ export default function MyDevices({navigation}: any) {
                     )
                 })}
             </ScrollView>
-            <Modal navigation={navigation} />
+            <Modal navigation={navigation}/>
         </>
 
-    )
+    );
 }
 
 function deleteDeviceFromList(
     token:string,
-    id:string,
-    setDevices: any
+    id:string
 ) {
     Alert.alert(
         "Usuwanie urządzenia",
@@ -62,10 +74,9 @@ function deleteDeviceFromList(
                         token,
                         id
                     })
-                    deleteDevice(token, id)
+                    unassignDevice(token, id)
                         .then((response) => {
                             console.log(JSON.stringify(response));
-                            setDevices((prev: DeviceProperties[]) => prev.filter((device_obj: DeviceProperties) => device_obj.device_id !== id));
                         })
                         .catch((error) => {
                             console.log(error);
@@ -128,6 +139,22 @@ let styles = StyleSheet.create({
     },
     centeredText: {
         textAlign: "center"
+    },
+    refreshButton: {
+        backgroundColor: "blue",
+        padding: 10,
+        borderRadius: 4,
+        width: "80%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginVertical: 10,
+        alignSelf: "center"
+    },
+    grayText: {
+        color: "gray",
+        textAlign: "center",
+        marginTop: 10
     }
 })
 

@@ -2,8 +2,6 @@ import {BleManager, Device} from "react-native-ble-plx";
 import {aes_iv, aes_key, ble_read_characteristic, ble_service, ble_write_characteristic} from "../../types/types";
 import {Alert} from "react-native";
 import Aes from "react-native-aes-crypto";
-import {SetStateAction} from "react";
-import {deleteDevice} from "../Endpoints";
 
 export const _isDuplicteDevice = (devices: Device[], nextDevice: Device) => {
     return devices.some((device) => device.id === nextDevice.id);
@@ -55,15 +53,6 @@ export async function sendWiFiCredentials(device: Device, aesKey: string, wifiNa
     )
         .then((characteristic) =>
         {
-            Alert.alert(
-                "Success",
-                "Udało się wysłać dane. Oczekiwanie na odpowiedź urządzenia.",
-                [
-                    {
-                        text: "Ok",
-                        style: "cancel"
-                    }
-                ])
             return true;
         })
         .catch( (error) => {
@@ -89,7 +78,6 @@ export function waitForResponse(device: Device, bearerToken:string ): Promise<bo
                 .then(async (characteristic) => {
                     const utfMessage = Buffer.from(characteristic.value || "", "base64").toString("utf8");
                     const message = await decryptData(utfMessage);
-                    Alert.alert("Stan łączenia: ", message === "R" ? "Oczekiwanie na odpowiedź urządzenia" : "Odpowiedź od urządzenia: " + message);
                     if (message !== "R") {
                         if (message !== "R") {
                             Alert.alert("Odpowiedź od rpi: ", message === "S" ? "Sukces łączenia z wifi" : "Fail łączenia z wifi")

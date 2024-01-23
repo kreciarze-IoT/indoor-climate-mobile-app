@@ -34,12 +34,12 @@ export default function AddDevices(
                             onChangeText={text => {
                                 setWifiName(text)}
                             }
-                            value={wifiName} maxLength={16} />
+                            value={wifiName} maxLength={32} />
                 <TextInput  style={styles.textInput} placeholder={"Enter wifi password"}
                             onChangeText={text => {
                                 setWifiPass(text)}
                             }
-                            value={wifiPass} maxLength={16} />
+                            value={wifiPass} maxLength={63} />
             </View>
         <View style={styles.container}>
             <Text style={styles.text}>Click "Scan" to start scanning area for devices.</Text>
