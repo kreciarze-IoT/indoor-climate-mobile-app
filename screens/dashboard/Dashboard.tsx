@@ -41,7 +41,7 @@ function Dashboard({navigation}: any) {
                     }>
                         {devices?.length > 0 && devices.map((device, index) => {
                             return (device.activated &&
-                                <Picker.Item key={index} label={`Device ${device.id} (${device.name})`} value={device.id} />
+                                <Picker.Item key={index} label={`Device ${device.id.slice(0,4)} (${device.name})`} value={device.id} />
                             )
                         })}
                     </Picker>

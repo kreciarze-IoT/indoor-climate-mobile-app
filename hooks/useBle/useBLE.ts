@@ -142,10 +142,10 @@ export default function useBLE(): BluetoothLowEnergyApi {
                     setTimeout(async () => {
                         await waitForResponse(device, bearer_token);
                     }
-                    , 5000);
+                    , 1000);
             }
             )
-            .catch((error) => Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. Spróbuj ponownie."));
+            .catch((error) => Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. " + error));
     }
 
     return {

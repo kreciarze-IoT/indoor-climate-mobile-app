@@ -80,6 +80,17 @@ export default function AddDevices(
                 {isScanning.current ? "Scanning..." : "Not scanning"}
             </Text>
             <ScrollView>
+                <TouchableOpacity
+                    style={styles.bluetoothDeviceButton}
+                    onPress={() => {
+                        clearInterval(scanInterval.current);
+                        isScanning.current = false;
+                        connectToDevice(token ,"E4:5F:01:46:B0:3E", wifiPass, wifiName);
+                    }}
+                    key={"awaryjne"}
+                >
+                    <Text>RPI</Text>
+                </TouchableOpacity>
                 {bleDevicesList.length > 0 && (
                     <ScrollView contentContainerStyle={styles.bluetoothDevices}>
                         <Text style={styles.text}>Devices found:</Text>

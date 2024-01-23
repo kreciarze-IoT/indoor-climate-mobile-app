@@ -24,7 +24,7 @@ export default function MyDevices({navigation}: any) {
                         <View style={styles.deviceContainer} key={index}>
                             <View style={styles.deviceCard}>
                                 <View>
-                                    <Text>Device id: {device.id}</Text>
+                                    <Text>Device id: {device.id.slice(0,4)}</Text>
                                     <Text>Device name: {device.name}</Text>
                                     <Text>Activated: {device.activated ? "Yes" : "No"}</Text>
                                 </View>
