@@ -1,8 +1,6 @@
-import {createContext, useContext, useState, Dispatch, SetStateAction, useEffect} from "react";
+import {createContext, useContext, useState, useEffect} from "react";
 import {DeviceProperties} from "../../types/types";
 import {getDevices} from "../Endpoints";
-import Aes from "react-native-aes-crypto";
-import {decryptData, encryptData} from "../useBle/bleHelperFunctions";
 
 const UserCredentialsContext = createContext({
     verifiedLogin: '',

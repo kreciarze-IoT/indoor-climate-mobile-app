@@ -9,9 +9,9 @@ export const ble_read_UUID_characteristic = "00000005-710e-4a5b-8d75-3e5b444bc3c
 
 export type BluetoothLowEnergyApi = {
     requestPermissions(): Promise<boolean>;
-    scanForPeripherals(): void;
+    scanForPeripherals(isScanning:boolean): void;
     bleDevicesList: Device[];
-    connectToDevice(bearer_token: string, deviceId: string, wifiPass: string, wifiName: string): void;
+    connectToDevice(bearer_token: string, deviceId: string, wifiPass: string, wifiName: string, slowMode: boolean): void;
     changeDeviceWifiCredentials(bearer_token: string, deviceMac:string, deviceUUID: string,  wifiName: string, wifiPass: string): void;
 }
 

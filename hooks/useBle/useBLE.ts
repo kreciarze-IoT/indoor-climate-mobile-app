@@ -3,7 +3,7 @@ import {useMemo, useState} from "react";
 import {Alert, PermissionsAndroid, Platform} from "react-native";
 
 import {BleManager, Device} from "react-native-ble-plx";
-import {assignDevice, getDeviceKey, getDevices} from "../Endpoints";
+import {assignDevice, getDeviceKey} from "../Endpoints";
 import {
     ble_read_UUID_characteristic,
     ble_service,
@@ -11,8 +11,8 @@ import {
 } from "../../types/types";
 import {useUserCredentials} from "../useUserCredentials/useUserCredentials";
 import {
-    _enableBluetooth,
-    _singleScan, decryptData,
+    _enableBluetooth, _isDuplicteDevice,
+     decryptData,
     sendWiFiCredentials, waitForResponse
 } from "./bleHelperFunctions";
 import Aes from "react-native-aes-crypto";
@@ -48,17 +48,27 @@ export default function useBLE(): BluetoothLowEnergyApi {
         return false
     }
 
-    const scanForPeripherals = async () => {
+    const scanForPeripherals = async (isScanning: boolean) => {
         await _enableBluetooth(bleManager);
-        const devices = await _singleScan(bleManager);
-        setBleDevicesList((prev) => {
-            const savedDevicesMAC = prev.map((device) => device.id);
-            const newDevices = devices.filter((device) => !savedDevicesMAC.includes(device.id));
-            return [...prev, ...newDevices];
+        bleManager.startDeviceScan(null, null, (error, device) => {
+            if (error || !isScanning) {
+                bleManager.stopDeviceScan();
+                return;
+            }
+            if (
+                device
+                && device.name
+            ) {
+                console.log("scan..")
+                setBleDevicesList((prev) => {
+                    const isItOldDevice = prev.some((prevDevice) => prevDevice.id === device.id);
+                    return isItOldDevice ? prev : [...prev, device];
+                });
+            }
         });
     }
 
-    const connectToDevice = async (bearer_token: string, deviceId: string, wifiPass: string, wifiName: string) => {
+    const connectToDevice = async (bearer_token: string, deviceId: string, wifiPass: string, wifiName: string, slowMode:boolean) => {
         if (wifiName === "") {
             Alert.alert("Błąd", "Nie podano nazwy sieci WiFi.");
             return;
@@ -68,10 +78,11 @@ export default function useBLE(): BluetoothLowEnergyApi {
             Alert.alert("Błąd", "Nie jesteś połączony z siecią WiFi. Połącz się i spróbuj ponownie.");
             return;
         }
+        Alert.alert("Parowanie", "Rozpoczynam parowanie...");
         //ŁĄCZENIE Z URZĄDZENIEM
         bleManager.connectToDevice(
             deviceId,
-            {requestMTU: 512, timeout: 45000}
+            {requestMTU: 512, timeout: 60000}
         )
             .then(async (device) => device.discoverAllServicesAndCharacteristics())
             .then(async (device) => {
@@ -87,39 +98,29 @@ export default function useBLE(): BluetoothLowEnergyApi {
                 const rpiResponsePromise = sendWiFiCredentials(device, aesKey, wifiName, wifiPass);
                 //FETCHUJEMY AŻ OTRZYMAMY SUKCES
                 // let numberOfTries = 0;
-                // let serverResponsePromise: Promise<string> | undefined;
-                // const interval = setInterval(async () => {
-                //     try {
-                //         serverResponsePromise = createDevice(bearer_token, deviceId, aesKey, deviceUUID);
-                //         numberOfTries++;
-                //     } catch (e) {
-                //         console.log(e);
-                //     }
-                //     if (numberOfTries > 5) {
-                //         clearInterval(interval);
-                //         Alert.alert("Błąd", "Nie udało się wysłać danych do serwera. Sprawdź połączenie z internetem.");
-                //     }
-                // }, 1000 * 3 * numberOfTries);
-                const serverResponsePromise = assignDevice(bearer_token, deviceId, aesKey, deviceUUID);
+                let serverResponsePromise;
+                if(slowMode) {
+                    Alert.alert("Parowanie", "Włączony tryb wolny. Oczekiwanie na odpowiedź serwera...");
+                    serverResponsePromise = new Promise((resolve, reject) => {
+                        setTimeout(() => {
+                            resolve(assignDevice(bearer_token, deviceId, aesKey, deviceUUID));
+                        }, 15000);
+                    });
+                }
+                else {
+                    serverResponsePromise = assignDevice(bearer_token, deviceId, aesKey, deviceUUID);
+                }
                 const serverResponse = await serverResponsePromise;
                 const rpiResponse = await rpiResponsePromise;
                 //CZEKANIE NA ODPOWIEDZI
                 if (serverResponse && rpiResponse) {
-                    setTimeout(async () => {
-                        await waitForResponse(device, bearer_token);
-                        setDevices(prev => [...prev, {
-                            id: deviceUUID,
-                            name: deviceId,
-                            activated: false,
-                            user_id: 0
-                        }]);
-                    }, 2500);
+                    await waitForResponse(device, bearer_token);
                 } else Alert.alert("Fail!", "Odpowiedzi od serwera i urządzenia nie otrzymane - serwer: " + serverResponse + " i rpi: " + rpiResponse);
             })
-            .catch((error) => Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. Błąd: " + error));
+            .catch((error) => Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. Błąd: " + error))
     }
 
-    const changeDeviceWifiCredentials = async (bearer_token: string, deviceMAC: string, deviceUUID: string, wifiPass: string, wifiSSID: string) => {
+    const changeDeviceWifiCredentials = async (bearer_token: string, deviceMAC: string, deviceUUID: string, wifiSSID:string, wifiPass:string) => {
         if(wifiSSID === "") {
             Alert.alert("Błąd", "Nie podano nazwy sieci WiFi.");
             return;
@@ -131,9 +132,10 @@ export default function useBLE(): BluetoothLowEnergyApi {
             wifiPass,
             wifiSSID
         });
+        Alert.alert("Parowanie", "Rozpoczynam zmianę danych...");
         bleManager.connectToDevice(
             deviceMAC,
-            {requestMTU: 512, timeout: 45000}
+            {requestMTU: 512, timeout: 60000}
             )
             .then(async (device) => {
                 device = await device.discoverAllServicesAndCharacteristics();
@@ -145,7 +147,7 @@ export default function useBLE(): BluetoothLowEnergyApi {
                     , 1000);
             }
             )
-            .catch((error) => Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. " + error));
+            .catch((error) => Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. " + error))
     }
 
     return {

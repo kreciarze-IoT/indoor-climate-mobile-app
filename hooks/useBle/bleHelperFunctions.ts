@@ -15,29 +15,6 @@ export async function _enableBluetooth(bleManager: BleManager) {
             .catch((error) => console.log("An error occurred while enabling Bluetooth", error));
     return isOn === "PoweredOn";
 }
-
-export async function _singleScan(bleManager:BleManager): Promise<Device[]> {
-    const devices: Device[] = [];
-    bleManager.startDeviceScan(null, null, (error, device) => {
-        if (error) {
-            bleManager.stopDeviceScan();
-            return;
-        }
-        if (
-            device
-            && !_isDuplicteDevice(devices, device)
-            && device.name
-        ) {
-            devices.push(device);
-        }
-    });
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            bleManager.stopDeviceScan();
-            resolve(devices);
-        }, 1500);
-    });
-}
 export async function sendWiFiCredentials(device: Device, aesKey: string, wifiName: string, wifiPass: string): Promise<boolean> {
     const message = JSON.stringify({
         wifi_ssid: wifiName,
@@ -76,6 +53,7 @@ export function waitForResponse(device: Device, bearerToken:string ): Promise<bo
         const interval = setInterval(() => {
             device.readCharacteristicForService(ble_service, ble_read_characteristic)
                 .then(async (characteristic) => {
+                    Alert.alert("Odpowiedź od rpi: ", characteristic.value || "");
                     const utfMessage = Buffer.from(characteristic.value || "", "base64").toString("utf8");
                     const message = await decryptData(utfMessage);
                     if (message !== "R") {
@@ -88,12 +66,12 @@ export function waitForResponse(device: Device, bearerToken:string ): Promise<bo
                             else {
                                 resolve(false);
                             }
+                            await device.cancelConnection();
                         }
                     }
                 })
                 .catch((error) => {
                     Alert.alert("Błąd połączenia", "Nie udało się połączyć z urządzeniem. Error: " + error);
-                    clearInterval(interval);
                     resolve(false);
                 });
         }, 1500);

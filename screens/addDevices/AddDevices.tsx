@@ -9,8 +9,8 @@ export default function AddDevices(
     {navigation}: any
 ){
     let { token } = useUserCredentials();
-    let scanInterval = useRef<any>(null);
-    let isScanning = useRef<boolean>(false);
+    const [isScanning, setIsScanning] = useState(false);
+    const [slowMode, setSlowMode] = useState(false);
     const [permissions, setPermissions] = useState(false);
     const [wifiPass, setWifiPass] = useState('');
     const [wifiName, setWifiName] = useState('');
@@ -25,7 +25,7 @@ export default function AddDevices(
         requestPermissions().then((result) => {
             setPermissions(result);
         });
-    }, [scanInterval.current]);
+    }, [isScanning]);
 
     return (
         <>
@@ -42,13 +42,18 @@ export default function AddDevices(
                             value={wifiPass} maxLength={63} />
             </View>
         <View style={styles.container}>
+            <TouchableOpacity style={[styles.button, styles.bgRed]} onPress={() => {
+                setSlowMode(!slowMode);
+            } }>
+                <Text style={styles.buttonText}>Slow mode: {slowMode ? "ON" : "OFF"}</Text>
+            </TouchableOpacity>
             <Text style={styles.text}>Click "Scan" to start scanning area for devices.</Text>
             <View style={styles.actionButtons}>
                 <TouchableOpacity
                     style={[styles.button, styles.bgRed]}
                     onPress={() => {
-                        clearInterval(scanInterval.current);
-                        isScanning.current = false;
+                        setIsScanning(false)
+                        scanForPeripherals(false)
                     }}
                 >
                     <Text style={styles.buttonText}>Cancel</Text>
@@ -60,11 +65,8 @@ export default function AddDevices(
                     ]}
                     onPress={() => {
                         if(permissions){
-                            clearInterval(scanInterval.current);
-                            isScanning.current = true;
-                            scanInterval.current = setInterval(() => {
-                                scanForPeripherals();
-                            }, 1500);
+                            setIsScanning(prev => !prev);
+                            scanForPeripherals(!isScanning);
                         }
                     }}
                 >
@@ -77,20 +79,9 @@ export default function AddDevices(
                 styles.text,
                 styles.textCenter
             ]}>
-                {isScanning.current ? "Scanning..." : "Not scanning"}
+                {isScanning ? "Scanning..." : "Not scanning"}
             </Text>
             <ScrollView>
-                <TouchableOpacity
-                    style={styles.bluetoothDeviceButton}
-                    onPress={() => {
-                        clearInterval(scanInterval.current);
-                        isScanning.current = false;
-                        connectToDevice(token ,"E4:5F:01:46:B0:3E", wifiPass, wifiName);
-                    }}
-                    key={"awaryjne"}
-                >
-                    <Text>RPI</Text>
-                </TouchableOpacity>
                 {bleDevicesList.length > 0 && (
                     <ScrollView contentContainerStyle={styles.bluetoothDevices}>
                         <Text style={styles.text}>Devices found:</Text>
@@ -98,9 +89,8 @@ export default function AddDevices(
                             <TouchableOpacity
                                 style={styles.bluetoothDeviceButton}
                                 onPress={() => {
-                                    clearInterval(scanInterval.current);
-                                    isScanning.current = false;
-                                    connectToDevice(token ,device.id, wifiPass, wifiName);
+                                    setIsScanning(false)
+                                    connectToDevice(token ,device.id, wifiPass, wifiName, slowMode);
                                 }}
                                 key={device.id}
                             >

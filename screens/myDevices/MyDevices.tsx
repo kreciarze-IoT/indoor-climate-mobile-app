@@ -29,10 +29,7 @@ export default function MyDevices({navigation}: any) {
                                     <Text>Activated: {device.activated ? "Yes" : "No"}</Text>
                                 </View>
                                 <TouchableOpacity style={styles.deleteButton} onPress={() => {
-                                    deleteDeviceFromList(token, `${device.id}`);
-                                    getDevices(token).then((devices: DeviceProperties[]) => {
-                                        setDevices(() => devices);
-                                    });
+                                    deleteDeviceFromList(token, `${device.id}`, setDevices);
                                 }}>
                                     <Text style={styles.buttonText}>X</Text>
                                 </TouchableOpacity>
@@ -56,8 +53,9 @@ export default function MyDevices({navigation}: any) {
 }
 
 function deleteDeviceFromList(
-    token:string,
-    id:string
+    token: string,
+    id: string,
+    setDevices: (devices: (prev: DeviceProperties[]) => DeviceProperties[]) => void
 ) {
     Alert.alert(
         "Usuwanie urządzenia",
@@ -77,6 +75,11 @@ function deleteDeviceFromList(
                     unassignDevice(token, id)
                         .then((response) => {
                             console.log(JSON.stringify(response));
+                            setDevices((prev: DeviceProperties[]) => {
+                                return prev.filter((item: DeviceProperties) => {
+                                    return item.id !== id;
+                                })
+                            });
                         })
                         .catch((error) => {
                             console.log(error);
